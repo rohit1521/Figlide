@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Layout</title>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+    <style>
+        body {
+            margin: 0;
+            width: 1000px;
+            height: 600px;
+            font-family: 'Inter', sans-serif;
+        }
+        .header, .footer {
+            height: 50px;
+            background-color: #ffffff;
+        }
+        .main {
+            display: flex;
+            height: 500px;
+        }
+        .left {
+            width: 250px;
+            border-right: 1px solid #e1e1e1;
+            border-top: 1px solid #e1e1e1;
+            background-color: #e1e1e1;
+            display: flex;
+            flex-direction: column;
+        }
+        .left .top {
+            height: 450px;
+            background-color: #F1F0F3;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px 0;
+            scroll-behavior: smooth;
+        }
+        .ward {
+            width: 190px;
+            height: 110px;
+            min-height: 110px;
+            background-color: #fff;
+            margin-bottom: 10px;
+            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            box-sizing: border-box;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+        }
+        .ward.selected {
+            border: 5px solid #D14726;
+        }
+        .ward:last-child {
+            margin-bottom: 0;
+        }
+        .right {
+            width: 750px;
+            background-color: #F1F1F4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .left .bottom {
+            height: 50px;
+            background-color: #F7F7F8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+        .card-wrapper {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            cursor: move;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+        .card-wrapper.dragging {
+            opacity: 0.5;
+            transform: scale(0.95);
+            z-index: 1000;
+        }
+        .card-wrapper:not(.dragging) {
+            transition: transform 0.2s ease-in-out;
+        }
+        .card-wrapper.drag-over-top {
+            transform: translateY(-10px);
+        }
+        .card-wrapper.drag-over-bottom {
+            transform: translateY(10px);
+        }
+        .slide-number {
+            padding-top: 16px;
+            align-self: flex-start;
+            margin-right: 10px;
+            font-size: 16px;
+            color: #333;
+            pointer-events: none;
+        }
+        .preview-card {
+            width: 600px;
+            height: 338px;
+            background-color: #fff;
+            border: 1px solid #e1e1e1;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .preview-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        /* Add shimmer effect styles */
+        @keyframes shimmer {
+            0% {
+                background-position: -468px 0;
+            }
+            100% {
+                background-position: 468px 0;
+            }
+        }
+
+        .shimmer {
+            background: #f6f7f8;
+            background-image: linear-gradient(
+                to right,
+                #f6f7f8 0%,
+                #edeef1 20%,
+                #f6f7f8 40%,
+                #f6f7f8 100%
+            );
+            background-repeat: no-repeat;
+            background-size: 800px 104px;
+            animation: shimmer 1s linear infinite;
+        }
+
+        .header {
+            height: 50px;
+            
+            background-color: #ffffff;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            border-bottom: 1px solid #e1e1e1;
+        }
+
+        .presentation-title-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .presentation-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #D14726;
+            border-radius: 4px;
+            color: white;
+            font-weight: bold;
+        }
+
+        .presentation-title {
+            font-size: 16px;
+            color: #333;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: text;
+            min-width: 100px;
+            max-width: 400px;
+            white-space: nowrap;
+            overflow: hidden;
+           
+        }
+
+        .presentation-title:hover {
+            background-color: #f5f5f5;
+        }
+
+        .presentation-title:focus {
+            background-color: #fff;
+            outline: 1px solid #f69a83;
+            outline-offset: -2px;
+        }
+
+        .export-btn {
+            margin-left: auto;
+            padding: 8px 16px;
+            background-color: #D14726;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .export-btn:hover {
+            background-color: #b93d1f;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="presentation-title-container">
+            <div class="presentation-icon">P</div>
+            <div class="presentation-title" 
+                 contenteditable="true" 
+                 spellcheck="false"
+                 onclick="this.focus()"
+            >Presentation 1</div>
+        </div>
+        <button class="export-btn" onclick="handleExport()">Export PPT</button>
+    </div>
+    <div class="main">
+        <div class="left">
+            <div class="top" id="top-section">
+                <div class="card-wrapper">
+                    <div class="slide-number">1</div>
+                    <div class="ward" onclick="toggleSelect(this)">Ward 1</div>
+                </div>
+            </div>
+            <div class="bottom" onclick="requestThumbnail()">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="1.5" y="1.5" width="29" height="29" rx="6.5" stroke="#808080" stroke-width="3"/>
+                    <g clip-path="url(#clip0_9_19)">
+                        <path d="M14.5547 23.6151V17.8409H8.7912V14.9752H14.5547V9.21167H17.4205V14.9752H23.1946V17.8409H17.4205V23.6151H14.5547Z" fill="#808080"/>
+                    </g>
+                    <defs>
+                        <clipPath id="clip0_9_19">
+                            <rect width="16" height="15" fill="white" transform="translate(8 9)"/>
+                        </clipPath>
+                    </defs>
+                </svg>
+            </div>
+        </div>
+        <div class="right">
+            <div class="preview-card" id="preview-section">
+                <!-- Preview content will be added here -->
+            </div>
+        </div>
+    </div>
+    <div class="footer">Footer</div>
+
+    <script>
+        // Handle presentation title editing
+        const presentationTitle = document.querySelector('.presentation-title');
+        
+        presentationTitle.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                presentationTitle.blur();
+            }
+        });
+
+        presentationTitle.addEventListener('blur', () => {
+            if (!presentationTitle.textContent.trim()) {
+                presentationTitle.textContent = 'Presentation 1';
+            }
+        });
+
+        function addCardWithShimmer() {
+            const topSection = document.getElementById('top-section');
+            const cardWrapper = document.createElement('div');
+            cardWrapper.className = 'card-wrapper';
+            cardWrapper.draggable = true;
+
+            // Add drag event listeners
+            cardWrapper.addEventListener('dragstart', (e) => {
+                cardWrapper.classList.add('dragging');
+                const img = cardWrapper.querySelector('img');
+                const rect = cardWrapper.getBoundingClientRect();
+                const offsetX = rect.width / 2;
+                const offsetY = rect.height / 2;
+                if (img) {
+                    e.dataTransfer.setDragImage(cardWrapper, offsetX, offsetY);
+                }
+                requestAnimationFrame(() => {
+                    cardWrapper.style.opacity = '0.5';
+                    cardWrapper.style.transform = 'scale(0.95)';
+                });
+            });
+
+            cardWrapper.addEventListener('dragend', (e) => {
+                cardWrapper.classList.remove('dragging');
+                requestAnimationFrame(() => {
+                    cardWrapper.style.opacity = '';
+                    cardWrapper.style.transform = '';
+                });
+                updateSlideNumbers();
+            });
+
+            cardWrapper.addEventListener('dragenter', (e) => {
+                e.preventDefault();
+                if (!cardWrapper.classList.contains('dragging')) {
+                    cardWrapper.classList.add('drag-over');
+                }
+            });
+
+            cardWrapper.addEventListener('dragleave', (e) => {
+                cardWrapper.classList.remove('drag-over');
+            });
+
+            const slideNumber = document.createElement('div');
+            slideNumber.className = 'slide-number';
+            slideNumber.textContent = topSection.children.length + 1;
+
+            const newCard = document.createElement('div');
+            newCard.className = 'ward shimmer';
+            newCard.onclick = function() { toggleSelect(newCard); };
+            newCard.draggable = false;
+            newCard.dataset.frameId = '';
+
+            cardWrapper.appendChild(slideNumber);
+            cardWrapper.appendChild(newCard);
+            topSection.appendChild(cardWrapper);
+
+            // Scroll to the bottom of the container
+            topSection.scrollTop = topSection.scrollHeight;
+
+            return newCard;
+        }
+
+        function toggleSelect(card) {
+            const cards = document.querySelectorAll('.ward');
+            cards.forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+
+            // Update preview section with selected card content
+            const previewSection = document.getElementById('preview-section');
+            previewSection.innerHTML = '';
+            
+            // Clone the image if it exists
+            const selectedImage = card.querySelector('img');
+            if (selectedImage) {
+                const previewImage = selectedImage.cloneNode(true);
+                previewSection.appendChild(previewImage);
+            } else {
+                previewSection.textContent = card.textContent;
+            }
+        }
+
+        function requestThumbnail() {
+            console.log('Bottom section clicked');
+            const shimmerCard = addCardWithShimmer(); // Add card with shimmer immediately
+            parent.postMessage({ pluginMessage: { type: 'create-thumbnail' } }, '*');
+            return shimmerCard; // Return the shimmer card reference
+        }
+
+        window.onmessage = (event) => {
+            const message = event.data.pluginMessage;
+            console.log('Received message from plugin:', message);
+            if (message.type === 'thumbnail') {
+                const topSection = document.getElementById('top-section');
+                const lastCardWrapper = topSection.lastElementChild;
+                const shimmerCard = lastCardWrapper.querySelector('.ward');
+                
+                shimmerCard.classList.remove('shimmer');
+                console.log('Setting frame ID:', message.frameId);
+                shimmerCard.dataset.frameId = message.frameId;
+                console.log('Frame ID set:', shimmerCard.dataset.frameId);
+                
+                const img = document.createElement('img');
+                img.src = `data:image/png;base64,${message.data}`;
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.borderRadius = '10px';
+                img.draggable = false;
+                shimmerCard.appendChild(img);
+
+                // Reinitialize drag for this card
+                initDragAndDrop();
+            }
+        };
+
+        function initDragAndDrop() {
+            const topSection = document.getElementById('top-section');
+            const cardWrappers = document.querySelectorAll('.card-wrapper');
+
+            cardWrappers.forEach(wrapper => {
+                wrapper.draggable = true;
+                
+                wrapper.addEventListener('dragstart', (e) => {
+                    wrapper.classList.add('dragging');
+                    const img = wrapper.querySelector('img');
+                    if (img) {
+                        e.dataTransfer.setDragImage(wrapper, 0, 0);
+                    }
+                    requestAnimationFrame(() => {
+                        wrapper.style.opacity = '0.5';
+                        wrapper.style.transform = 'scale(0.95)';
+                    });
+                });
+
+                wrapper.addEventListener('dragend', (e) => {
+                    wrapper.classList.remove('dragging');
+                    requestAnimationFrame(() => {
+                        wrapper.style.opacity = '';
+                        wrapper.style.transform = '';
+                    });
+                    updateSlideNumbers();
+                });
+
+                wrapper.addEventListener('dragenter', (e) => {
+                    e.preventDefault();
+                    if (!wrapper.classList.contains('dragging')) {
+                        wrapper.classList.add('drag-over');
+                    }
+                });
+
+                wrapper.addEventListener('dragleave', (e) => {
+                    wrapper.classList.remove('drag-over');
+                });
+            });
+
+            topSection.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                const draggingItem = document.querySelector('.dragging');
+                const siblings = [...topSection.querySelectorAll('.card-wrapper:not(.dragging)')];
+
+                const nextSibling = siblings.find(sibling => {
+                    const box = sibling.getBoundingClientRect();
+                    const offset = e.clientY - box.top - box.height / 2;
+                    return offset < 0;
+                });
+                
+                siblings.forEach(sibling => {
+                    sibling.classList.remove('drag-over-top', 'drag-over-bottom');
+                });
+
+                if (nextSibling) {
+                    nextSibling.classList.add('drag-over-top');
+                    if (nextSibling.previousElementSibling && !nextSibling.previousElementSibling.classList.contains('dragging')) {
+                        nextSibling.previousElementSibling.classList.add('drag-over-bottom');
+                    }
+                    topSection.insertBefore(draggingItem, nextSibling);
+                } else {
+                    const lastSibling = siblings[siblings.length - 1];
+                    if (lastSibling) {
+                        lastSibling.classList.add('drag-over-bottom');
+                    }
+                    topSection.appendChild(draggingItem);
+                }
+            });
+
+            topSection.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const siblings = [...topSection.querySelectorAll('.card-wrapper')];
+                siblings.forEach(sibling => {
+                    sibling.classList.remove('drag-over-top', 'drag-over-bottom');
+                });
+            });
+        }
+
+        function updateSlideNumbers() {
+            const slideNumbers = document.querySelectorAll('.slide-number');
+            slideNumbers.forEach((number, index) => {
+                number.textContent = index + 1;
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initDragAndDrop();
+        });
+
+        function setExportButtonState(isExporting) {
+            const exportBtn = document.querySelector('.export-btn');
+            if (exportBtn) {
+                exportBtn.disabled = isExporting;
+                exportBtn.textContent = isExporting ? 'Generating...' : 'Export PPT';
+            }
+        }
+
+        async function handleExport() {
+            const cards = document.querySelectorAll('.ward');
+            console.log('Starting export with cards:', cards.length);
+            if (cards.length === 0) {
+                updateStatus('No cards to export');
+                return;
+            }
+
+            setExportButtonState(true);
+
+            try {
+                const frameData = Array.from(cards).map((card, index) => ({
+                    id: card.dataset.frameId,
+                    selectionIndex: index
+                }));
+
+                if (!frameData.some(data => data.id)) {
+                    throw new Error('No valid frame IDs found');
+                }
+
+                // Request frame data from Figma
+                parent.postMessage({ 
+                    pluginMessage: { 
+                        type: 'export-ppt',
+                        frames: frameData
+                    } 
+                }, '*');
+            } catch (error) {
+                console.error('Export error:', error);
+                updateStatus('Export failed');
+                setExportButtonState(false);
+            }
+        }
+
+        // Handle messages from Figma
+        window.onmessage = async (event) => {
+            const message = event.data.pluginMessage;
+            console.log('Received message:', message);
+
+            switch (message.type) {
+                case 'thumbnail':
+                    const topSection = document.getElementById('top-section');
+                    const lastCardWrapper = topSection.lastElementChild;
+                    const shimmerCard = lastCardWrapper.querySelector('.ward');
+                    
+                    shimmerCard.classList.remove('shimmer');
+                    shimmerCard.dataset.frameId = message.frameId;
+                    
+                    const img = document.createElement('img');
+                    img.src = `data:image/png;base64,${message.data}`;
+                    img.style.width = '100%';
+                    img.style.height = '100%';
+                    img.style.borderRadius = '10px';
+                    img.draggable = false;
+                    shimmerCard.appendChild(img);
+
+                    // Reinitialize drag for this card
+                    initDragAndDrop();
+                    break;
+
+                case 'frame-data':
+                    try {
+                        console.log('Received frame data:', message.frameData);
+                        if (!message.frameData || message.frameData.length === 0) {
+                            throw new Error('No valid frames to process');
+                        }
+                        await generatePPT(message.frameData);
+                        console.log('PPT generation completed');
+                        const exportBtn = document.querySelector('.export-btn');
+                        exportBtn.textContent = 'Export Complete!';
+                        setTimeout(() => {
+                            exportBtn.disabled = false;
+                            exportBtn.textContent = 'Export PPT';
+                        }, 2000);
+                    } catch (error) {
+                        console.error('PPT generation error:', error);
+                        const exportBtn = document.querySelector('.export-btn');
+                        exportBtn.textContent = 'Export Failed';
+                        setTimeout(() => {
+                            exportBtn.disabled = false;
+                            exportBtn.textContent = 'Export PPT';
+                        }, 2000);
+                    }
+                    break;
+
+                case 'export-error':
+                    console.error('Export error from Figma:', message.error);
+                    const exportBtn = document.querySelector('.export-btn');
+                    exportBtn.textContent = 'Export Failed';
+                    setTimeout(() => {
+                        exportBtn.disabled = false;
+                        exportBtn.textContent = 'Export PPT';
+                    }, 2000);
+                    break;
+            }
+        };
+
+        async function generatePPT(frameDataArray) {
+            console.time('Generate PPT');
+            if (typeof PptxGenJS === 'undefined') {
+                throw new Error('PptxGenJS library not loaded');
+            }
+            const pptx = new PptxGenJS();
+            const scaleFactor = 0.36;
+            const totalFrames = frameDataArray.length;
+
+            try {
+                frameDataArray.sort((a, b) => a.selectionIndex - b.selectionIndex);
+                
+                for (let i = 0; i < totalFrames; i++) {
+                    const frameData = frameDataArray[i];
+                    console.log(`Processing frame ${i + 1}/${totalFrames}`);
+                    
+                    const slide = pptx.addSlide();
+
+                    if (frameData.backgroundColor) {
+                        const { r, g, b } = frameData.backgroundColor;
+                        const hexColor = rgbToHex(r, g, b);
+                        slide.background = { color: hexColor };
+                    }
+
+                    const processedElements = await processFrameElements(frameData.elements);
+                    
+                    processedElements.forEach(element => {
+                        if (element.type === "TEXT") {
+                            addTextElement(slide, element, scaleFactor);
+                        } else if (element.type === "IMAGE") {
+                            addImageElement(slide, element);
+                        }
+                    });
+
+                    const progress = ((i + 1) / totalFrames) * 100;
+                    updateProgressBar(progress);
+                }
+
+                const pptBlob = await pptx.write("blob");
+                downloadPPT(pptBlob, "presentation.pptx");
+                
+                updateStatus("Presentation generated successfully!");
+            } catch (error) {
+                console.error("Error generating PPTX:", error);
+                throw error;
+            } finally {
+                console.timeEnd('Generate PPT');
+            }
+        }
+
+        // Add RGB to Hex conversion function
+        function rgbToHex(r, g, b) {
+            r = Math.round(r * 255);
+            g = Math.round(g * 255);
+            b = Math.round(b * 255);
+            return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+        }
+
+        // Helper functions for element processing
+        function addTextElement(slide, element, scaleFactor) {
+            slide.addText(element.text, {
+                x: element.x / 192,
+                y: element.y / 192,
+                w: (element.width + 32) / 192,
+                h: element.height / 142,
+                fontSize: element.fontSize * scaleFactor,
+                fontFace: element.fontName || "Arial",
+                color: element.fontColor || "#000000",
+                bold: element.fontWeight > 500,
+            });
+        }
+
+        function addImageElement(slide, element) {
+            try {
+                slide.addImage({
+                    data: element.imageBase64,
+                    x: element.x / 192,
+                    y: element.y / 192,
+                    w: element.width / 192,
+                    h: element.height / 192,
+                });
+            } catch (error) {
+                console.error('Error adding image to slide:', error, element);
+                throw error;
+            }
+        }
+
+        async function processFrameElements(elements) {
+            const imageElements = elements.filter(el => el.type === "IMAGE");
+            const otherElements = elements.filter(el => el.type !== "IMAGE");
+            
+            // Process images in parallel with a limit
+            const processedImages = await Promise.all(
+                imageElements.map(img => processImageElement(img))
+            );
+            
+            return [...processedImages, ...otherElements];
+        }
+
+        async function processImageElement(element) {
+            try {
+                const imageBase64 = await convertBytesToBase64(element.imageBytes);
+                // Add the required base64 header for PNG images
+                return { 
+                    ...element, 
+                    imageBase64: `data:image/png;base64,${imageBase64}` 
+                };
+            } catch (error) {
+                console.error('Error processing image:', error);
+                throw error;
+            }
+        }
+
+        function updateProgressBar(progress) {
+            const progressBar = document.getElementById('progress');
+            if (progressBar) {
+                progressBar.style.width = `${progress}%`;
+            }
+        }
+
+        function updateStatus(message) {
+            const statusEl = document.getElementById('status');
+            if (statusEl) {
+                statusEl.textContent = message;
+            }
+        }
+
+        // Add this function after the rgbToHex function
+        function downloadPPT(blob, fileName) {
+            try {
+                // Create a URL for the blob
+                const url = window.URL.createObjectURL(blob);
+                
+                // Create a temporary link element
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = fileName;
+                
+                // Append link to body, click it, and remove it
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                // Clean up the URL object
+                window.URL.revokeObjectURL(url);
+                
+                console.log('PPT download initiated');
+            } catch (error) {
+                console.error('Error downloading PPT:', error);
+                throw new Error('Failed to download PPT: ' + error.message);
+            }
+        }
+
+        // Also add the convertBytesToBase64 function that's used in processImageElement
+        function convertBytesToBase64(bytes) {
+            return new Promise((resolve, reject) => {
+                try {
+                    // Create a blob from the byte array
+                    const blob = new Blob([new Uint8Array(bytes)], { type: 'image/png' });
+                    
+                    // Use FileReader to convert blob to base64
+                    const reader = new FileReader();
+                    
+                    reader.onloadend = () => {
+                        // Get the base64 string from the result
+                        // Remove the data URL prefix (data:image/png;base64,)
+                        const base64String = reader.result.split(',')[1];
+                        resolve(base64String);
+                    };
+                    
+                    reader.onerror = () => {
+                        reject(new Error('FileReader failed to read blob'));
+                    };
+                    
+                    // Read the blob as a data URL
+                    reader.readAsDataURL(blob);
+                } catch (error) {
+                    console.error('Base64 conversion error:', error);
+                    reject(new Error('Failed to convert bytes to base64: ' + error.message));
+                }
+            });
+        }
+    </script>
+</body>
+</html>

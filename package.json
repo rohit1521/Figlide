@@ -1,0 +1,16 @@
+{
+  "name": "figma-to-ppt",
+  "version": "1.0.0",
+  "description": "Figma to PowerPoint converter",
+  "main": "code.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "watch": "tsc -p tsconfig.json --watch"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@figma/plugin-typings": "^1.74.0",
+    "typescript": "^5.0.0"
+  }
+}

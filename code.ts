@@ -115,10 +115,28 @@ async function processFrameElements(frame: FrameNode): Promise<(TextElement | Im
         const textElement = await processTextElement(node);
         if (textElement) elements.push(textElement);
       } 
+      // Add handling for nested frames
+      else if (node.type === 'FRAME') {
+        // Export the frame as an image
+        const imageBytes = await node.exportAsync({
+          format: 'PNG',
+          constraint: { type: 'SCALE', value: 1 }
+        });
+        
+        elements.push({
+          type: 'IMAGE',
+          x: node.x,
+          y: node.y,
+          width: node.width,
+          height: node.height,
+          imageBytes
+        });
+      }
       else if (node.type === 'RECTANGLE') {
         const imageElement = await processImageElement(node);
         if (imageElement) elements.push(imageElement);
       }
+      // You might want to add other node types here
     } catch (error) {
       console.error(`Error processing node in frame ${frame.name}:`, error);
     }

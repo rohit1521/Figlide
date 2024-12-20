@@ -1,6 +1,6 @@
 {
-  "name": "Figma to PPT",
-  "id": "figma-to-ppt",
+  "name": "Figlide",
+  "id": "figlide",
   "api": "1.0.0",
   "main": "code.js",
   "capabilities": [],
